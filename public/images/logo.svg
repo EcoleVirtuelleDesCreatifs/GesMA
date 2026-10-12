@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mobilier Addict">
+  <rect width="64" height="64" rx="14" fill="#8B5A2B"/>
+  <path d="M18 14h6v18h16V14h6v22H18z" fill="#F3E7DA"/>
+  <rect x="14" y="36" width="36" height="6" rx="2" fill="#D4A373"/>
+  <path d="M18 42h5v10h-5zM41 42h5v10h-5z" fill="#F3E7DA"/>
+</svg>
