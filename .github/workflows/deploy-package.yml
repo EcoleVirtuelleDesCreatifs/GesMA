@@ -1,0 +1,27 @@
+name: Archive de déploiement
+
+# Produit gesma-deploy.zip (avec vendor/) à envoyer par FTP sur un hébergement mutualisé
+# sans Composer. Télécharger l'archive depuis l'onglet Actions → exécution → Artifacts.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, gd, intl, zip, pdo_mysql
+      - run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+      - run: |
+          zip -qr gesma-deploy.zip . \
+            -x '.git/*' '.github/*' 'tests/*' 'node_modules/*' '.env' \
+               'storage/logs/*.log' 'bootstrap/cache/*.php'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gesma-deploy
+          path: gesma-deploy.zip

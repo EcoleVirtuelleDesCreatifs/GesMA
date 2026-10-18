@@ -1,0 +1,16 @@
+# Hébergement mutualisé (LWS, cPanel…) : à utiliser uniquement quand la racine du site
+# pointe sur le dossier du projet et non sur public/. Toutes les requêtes sont envoyées
+# vers public/, et les fichiers sensibles (.env, vendor, storage…) ne sont jamais servis.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^(\.env.*|\.git.*|composer\.(json|lock)|artisan|phpunit\.xml)$ - [F,L,NC]
+    RewriteRule ^(app|bootstrap|config|database|deploy|docs|lang|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>

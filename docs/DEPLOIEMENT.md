@@ -5,6 +5,8 @@ Configuration de référence : Ubuntu 22.04/24.04, Nginx, PHP 8.3-FPM, MySQL 8 (
 > L'application a été testée avec SQLite. MySQL/MariaDB est recommandé en production ;
 > exécutez `php artisan test` puis un parcours complet sur le serveur avant l'ouverture aux utilisateurs.
 
+> **Hébergement mutualisé LWS ?** Voir la section [10. Hébergement mutualisé (LWS)](#10-hébergement-mutualisé-lws--erreur-500).
+
 ## 1. Paquets
 
 ```bash
@@ -132,3 +134,49 @@ php artisan queue:restart && php artisan up
 - Données hors connexion chiffrées sur l'appareil (AES-GCM, clé non exportable) et effacées à la déconnexion.
 - Jetons de l'API du site stockés sous forme d'empreinte (SHA-256), désactivables à tout moment.
 - Historique des actions sensibles : `Administration → Historique sensible`.
+
+## 10. Hébergement mutualisé (LWS) — erreur 500
+
+La page orange « ERROR 500 - INTERNAL SERVER ERROR » de LWS s'affiche dès que PHP ou Laravel échoue
+au démarrage. Causes rencontrées, dans l'ordre où les vérifier :
+
+| Cause | Correction |
+|-------|-----------|
+| Version de PHP inférieure à 8.3 (Laravel 13 refuse de démarrer) | Panneau LWS → *Configuration PHP* → choisir **PHP 8.3** pour le domaine |
+| Dossier `vendor/` absent (il n'est pas dans Git) | `composer install --no-dev --optimize-autoloader` en SSH, ou envoyer l'archive `gesma-deploy.zip` (onglet *Actions* de GitHub → *Archive de déploiement*) |
+| Fichier `.env` absent ou `APP_KEY` vide | Copier `.env.production.lws` en `.env`, le compléter, puis `php artisan key:generate` |
+| Base SQLite par défaut / sessions en base avant les migrations | Utiliser MySQL et `SESSION_DRIVER=file`, `CACHE_STORE=file` (déjà dans `.env.production.lws`) |
+| Migrations non exécutées | `php artisan migrate --force` puis `php artisan db:seed --class=ReferenceDataSeeder --force` |
+| `storage/` ou `bootstrap/cache/` non inscriptibles | Droits 775 (ou 755) via FTP sur ces dossiers et leurs sous-dossiers |
+| `bootstrap/cache/config.php` envoyé depuis un autre ordinateur | Supprimer les fichiers `bootstrap/cache/*.php` (garder `.gitignore`) |
+
+### Installation
+
+1. Envoyer le projet complet (avec `vendor/`) dans le dossier du domaine.
+2. **Racine du site** : idéalement, faire pointer le domaine ou sous-domaine sur le dossier `public/`
+   dans le panneau LWS. Si ce n'est pas possible, laisser la racine sur le dossier du projet : le
+   fichier `.htaccess` à la racine renvoie tout vers `public/` et bloque `.env`, `vendor/`, `storage/`…
+3. Créer la base MySQL dans le panneau LWS, puis `.env` à partir de `.env.production.lws`.
+4. En SSH (si disponible) :
+
+   ```bash
+   php artisan key:generate --force
+   php artisan migrate --force
+   php artisan db:seed --class=ReferenceDataSeeder --force
+   php artisan storage:link
+   php artisan config:cache && php artisan route:cache && php artisan view:cache
+   ```
+
+   Sans SSH : générer `APP_KEY` en local (`php artisan key:generate --show`) et la coller dans `.env` ;
+   importer la base avec phpMyAdmin depuis un export de votre base locale migrée.
+5. Activer le certificat SSL (Let's Encrypt) dans le panneau LWS : en production l'application force
+   HTTPS, et le mode hors connexion l'exige.
+6. Tâche planifiée (panneau LWS → *Tâches Cron*), toutes les minutes :
+   `cd /chemin/du/projet && php artisan schedule:run`. Les sauvegardes `gesma:backup` utilisent
+   `mysqldump`, qui peut être indisponible sur un mutualisé : utiliser alors les sauvegardes LWS.
+
+### Trouver la cause exacte
+
+Copier `deploy/diagnostic.php` dans `public/` sous un nom difficile à deviner (ex. `public/diag-7f3k.php`),
+l'ouvrir dans le navigateur : il vérifie PHP, les extensions, `vendor/`, `.env`, les droits, la
+connexion MySQL et affiche la dernière erreur de `storage/logs`. **Supprimer le fichier ensuite.**
