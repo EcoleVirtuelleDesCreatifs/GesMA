@@ -28,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
         // générées : on force la racine publique déclarée dans APP_URL.
         if (config('app.env') === 'production') {
             URL::forceRootUrl(config('app.url'));
+            if (str_starts_with(config('app.url'), 'https://')) {
+                URL::forceScheme('https');
+            }
         }
 
         // Chaque droit de config/gesma.php devient une "ability" : @can('orders.create')
