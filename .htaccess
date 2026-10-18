@@ -7,6 +7,9 @@
     RewriteCond %{HTTP:X-API-KEY} .
     RewriteRule .* - [E=HTTP_X_API_KEY:%{HTTP:X-API-KEY}]
 
+    # Fichiers statiques rangés dans public/ (css, js, icônes, logo, manifeste, service worker).
+    RewriteRule ^((css|js|icons|logo|storage)/.+|sw\.js|manifest\.webmanifest|robots\.txt|favicon\.ico)$ public/$1 [L]
+
     # Bloquer l'accès direct aux fichiers/dossiers sensibles du docroot
     RewriteRule ^\.(env|git|gitignore|gitattributes) - [F,L]
     RewriteRule ^(app|bootstrap|config|database|public|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|README|phpunit)(/.*)?$ - [F,L]
