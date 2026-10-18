@@ -144,36 +144,43 @@ au démarrage. Causes rencontrées, dans l'ordre où les vérifier :
 |-------|-----------|
 | Version de PHP inférieure à 8.3 (Laravel 13 refuse de démarrer) | Panneau LWS → *Configuration PHP* → choisir **PHP 8.3** pour le domaine |
 | Dossier `vendor/` absent (il n'est pas dans Git) | `composer install --no-dev --optimize-autoloader` en SSH, ou envoyer l'archive `gesma-deploy.zip` (onglet *Actions* de GitHub → *Archive de déploiement*) |
-| Fichier `.env` absent ou `APP_KEY` vide | Copier `.env.production.lws` en `.env`, le compléter, puis `php artisan key:generate` |
+| Fichier `.env` absent ou `APP_KEY` vide | Copier `.env.production.lws` en `.env`, le compléter, puis ouvrir `installation.php?token=...` |
 | Base SQLite par défaut / sessions en base avant les migrations | Utiliser MySQL et `SESSION_DRIVER=file`, `CACHE_STORE=file` (déjà dans `.env.production.lws`) |
-| Migrations non exécutées | `php artisan migrate --force` puis `php artisan db:seed --class=ReferenceDataSeeder --force` |
+| Migrations non exécutées | Ouvrir `installation.php?token=...` (voir ci-dessous) |
 | `storage/` ou `bootstrap/cache/` non inscriptibles | Droits 775 (ou 755) via FTP sur ces dossiers et leurs sous-dossiers |
 | `bootstrap/cache/config.php` envoyé depuis un autre ordinateur | Supprimer les fichiers `bootstrap/cache/*.php` (garder `.gitignore`) |
 
-### Installation
+### Installation (sans SSH)
 
-1. Envoyer le projet complet (avec `vendor/`) dans le dossier du domaine.
-2. **Racine du site** : idéalement, faire pointer le domaine ou sous-domaine sur le dossier `public/`
-   dans le panneau LWS. Si ce n'est pas possible, laisser la racine sur le dossier du projet : le
-   fichier `.htaccess` à la racine renvoie tout vers `public/` et bloque `.env`, `vendor/`, `storage/`…
-3. Créer la base MySQL dans le panneau LWS, puis `.env` à partir de `.env.production.lws`.
-4. En SSH (si disponible) :
+1. Dans le panneau LWS : choisir **PHP 8.3**, créer la base **MySQL**, activer le **certificat SSL**.
+2. Télécharger `gesma-deploy.zip` (GitHub → *Actions* → *Archive de déploiement* → *Artifacts*) : il
+   contient déjà `vendor/`. L'envoyer par FTP ou le gestionnaire de fichiers LWS et le décompresser
+   dans le dossier du domaine (`htdocs`/`www`).
+3. **Racine du site** : si le panneau permet de la faire pointer sur `public/`, le faire. Sinon, rien
+   à changer : le `.htaccess` placé à la racine renvoie tout vers `public/` et bloque l'accès à `.env`,
+   `vendor/`, `storage/`…
+4. Copier `.env.production.lws` en `.env` et le compléter : `APP_URL` (avec `https://`), `DB_DATABASE`,
+   `DB_USERNAME`, `DB_PASSWORD` (indiqués par LWS ; `DB_HOST` est parfois différent de `localhost`),
+   et un `GESMA_INSTALL_TOKEN` d'au moins 16 caractères.
+5. Ouvrir `https://votre-domaine/installation.php?token=<GESMA_INSTALL_TOKEN>`. La page génère
+   `APP_KEY` ; la **recharger** une fois pour créer les tables, les magasins, les catégories et le
+   compte direction (le mot de passe provisoire s'affiche si `GESMA_ADMIN_PASSWORD` est vide).
+6. **Vider `GESMA_INSTALL_TOKEN`** dans `.env` : la page d'installation répond alors « Introuvable ».
+7. Tâche planifiée (panneau LWS → *Tâches Cron*), toutes les minutes :
+   `cd /chemin/du/projet && php artisan schedule:run`.
 
-   ```bash
-   php artisan key:generate --force
-   php artisan migrate --force
-   php artisan db:seed --class=ReferenceDataSeeder --force
-   php artisan storage:link
-   php artisan config:cache && php artisan route:cache && php artisan view:cache
-   ```
+Spécificités du mutualisé, déjà prises en charge :
 
-   Sans SSH : générer `APP_KEY` en local (`php artisan key:generate --show`) et la coller dans `.env` ;
-   importer la base avec phpMyAdmin depuis un export de votre base locale migrée.
-5. Activer le certificat SSL (Let's Encrypt) dans le panneau LWS : en production l'application force
-   HTTPS, et le mode hors connexion l'exige.
-6. Tâche planifiée (panneau LWS → *Tâches Cron*), toutes les minutes :
-   `cd /chemin/du/projet && php artisan schedule:run`. Les sauvegardes `gesma:backup` utilisent
-   `mysqldump`, qui peut être indisponible sur un mutualisé : utiliser alors les sauvegardes LWS.
+- **Photos des produits** : si les liens symboliques sont interdits (`storage:link` échoue),
+  l'application sert elle-même les fichiers de `storage/app/public` sous `/storage/...`.
+- **Sauvegardes** : sans `mysqldump` ni `tar`, `gesma:backup` exporte la base en PHP (`.sql.gz`) et
+  les photos en `.zip`. Télécharger régulièrement `storage/app/backups` par FTP.
+- **File d'attente** : `QUEUE_CONNECTION=sync`, aucun worker permanent n'est nécessaire.
+- **HTTPS** : forcé seulement si `APP_URL` commence par `https://`.
+
+**Mise à jour** : envoyer la nouvelle archive (sans écraser `.env` ni `storage/`), remettre un
+`GESMA_INSTALL_TOKEN`, rouvrir `installation.php?token=...` (migrations et vidage des caches), puis
+vider le jeton.
 
 ### Trouver la cause exacte
 

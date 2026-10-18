@@ -24,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale(config('app.locale'));
         Paginator::defaultView('partials.pagination');
 
-        if ($this->app->environment('production')) {
+        // Sur un hébergement sans certificat, forcer HTTPS casserait les liens et les styles.
+        if ($this->app->environment('production') && str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
 

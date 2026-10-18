@@ -23,11 +23,19 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SyncController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Application hors connexion (PWA) : fichiers servis sans authentification, mis en cache par le service worker.
 Route::get('/sw.js', [OfflineController::class, 'serviceWorker'])->name('pwa.sw');
 Route::get('/manifest.webmanifest', [OfflineController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/hors-ligne', [OfflineController::class, 'app'])->name('offline.app');
+
+// Photos des produits quand public/storage n'existe pas (liens symboliques interdits sur un mutualisé).
+Route::get('/storage/{path}', function (string $path) {
+    abort_if(str_contains($path, '..') || ! Storage::disk('public')->exists($path), 404);
+
+    return response()->file(Storage::disk('public')->path($path), ['Cache-Control' => 'public, max-age=604800']);
+})->where('path', '.*')->withoutMiddleware('web')->name('storage.public');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
