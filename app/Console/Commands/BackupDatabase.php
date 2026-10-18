@@ -32,18 +32,9 @@ class BackupDatabase extends Command
             $this->compress($target);
         } elseif (in_array($config['driver'], ['mysql', 'mariadb'], true)) {
             $target = "{$dir}/gesma_{$stamp}.sql";
-            $process = new Process([
-                'mysqldump',
-                '--single-transaction', '--quick', '--routines', '--no-tablespaces',
-                '-h', $config['host'], '-P', (string) $config['port'], '-u', $config['username'],
-                $config['database'],
-                '--result-file='.$target,
-            ], null, ['MYSQL_PWD' => (string) $config['password']], null, 600);
-            $process->run();
-            if (! $process->isSuccessful()) {
-                $this->error('Échec de mysqldump : '.$process->getErrorOutput());
-
-                return self::FAILURE;
+            if (! $this->mysqldump($config, $target)) {
+                // Hébergement mutualisé : mysqldump ou proc_open indisponibles, export en PHP.
+                $this->phpDump($target);
             }
             $this->compress($target);
         } else {
@@ -62,6 +53,50 @@ class BackupDatabase extends Command
         $this->info('Sauvegarde terminée.');
 
         return self::SUCCESS;
+    }
+
+    private function mysqldump(array $config, string $target): bool
+    {
+        if (! function_exists('proc_open')) {
+            return false;
+        }
+
+        try {
+            $process = new Process([
+                'mysqldump',
+                '--single-transaction', '--quick', '--routines', '--no-tablespaces',
+                '-h', $config['host'], '-P', (string) $config['port'], '-u', $config['username'],
+                $config['database'],
+                '--result-file='.$target,
+            ], null, ['MYSQL_PWD' => (string) $config['password']], null, 600);
+            $process->run();
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return $process->isSuccessful() && is_file($target) && filesize($target) > 0;
+    }
+
+    private function phpDump(string $target): void
+    {
+        $out = fopen($target, 'wb');
+        fwrite($out, "SET FOREIGN_KEY_CHECKS=0;\nSET NAMES utf8mb4;\n\n");
+        $pdo = DB::connection()->getPdo();
+
+        foreach (DB::select("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'") as $row) {
+            $table = array_values((array) $row)[0];
+            $create = array_values((array) DB::selectOne("SHOW CREATE TABLE `{$table}`"))[1];
+            fwrite($out, "DROP TABLE IF EXISTS `{$table}`;\n{$create};\n\n");
+
+            foreach (DB::table($table)->cursor() as $record) {
+                $values = array_map(fn ($v) => $v === null ? 'NULL' : $pdo->quote((string) $v), (array) $record);
+                fwrite($out, "INSERT INTO `{$table}` VALUES (".implode(',', $values).");\n");
+            }
+            fwrite($out, "\n");
+        }
+
+        fwrite($out, "SET FOREIGN_KEY_CHECKS=1;\n");
+        fclose($out);
     }
 
     private function compress(string $path): void
