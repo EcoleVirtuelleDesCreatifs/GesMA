@@ -11,6 +11,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Sur l'hébergement mutualisé, le chemin interne (htdocs/<domaine>) pollue les URL
+        // générées : on force la racine publique déclarée dans APP_URL.
+        if (config('app.env') === 'production') {
+            URL::forceRootUrl(config('app.url'));
+        }
+
         // Chaque droit de config/gesma.php devient une "ability" : @can('orders.create')
         foreach (array_keys(config('gesma.permissions', [])) as $permission) {
             Gate::define($permission, fn (User $user) => $user->hasPermission($permission));
