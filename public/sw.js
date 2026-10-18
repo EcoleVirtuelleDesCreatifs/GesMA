@@ -4,20 +4,22 @@
  * - Hors connexion, toute page demandée affiche la saisie hors connexion.
  * Les données métier ne sont pas mises en cache ici : elles sont chiffrées dans IndexedDB.
  */
-const VERSION = 'gesma-v2';
+const VERSION = 'gesma-v3';
 const ASSETS_CACHE = 'gesma-assets-' + VERSION;
 const PAGES_CACHE = 'gesma-pages';
-const OFFLINE_URL = '/hors-ligne';
+// Racine de l'application = portée du service worker (ex. "/" ou "/gesma/")
+const BASE = new URL('./', self.registration.scope).pathname;
+const OFFLINE_URL = BASE + 'hors-ligne';
 const ASSETS = [
-    '/css/app.css',
-    '/js/app.js',
-    '/js/offline-store.js',
-    '/js/offline-page.js',
-    '/icons/icon.svg',
-    '/icons/icon-192.png',
-    '/icons/icon-512.png',
-    '/manifest.webmanifest',
-];
+    'css/app.css',
+    'js/app.js',
+    'js/offline-store.js',
+    'js/offline-page.js',
+    'icons/icon.svg',
+    'icons/icon-192.png',
+    'icons/icon-512.png',
+    'manifest.webmanifest',
+].map((p) => BASE + p);
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(ASSETS_CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

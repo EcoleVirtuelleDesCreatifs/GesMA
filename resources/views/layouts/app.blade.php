@@ -9,11 +9,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GesMA">
     <title>@yield('title', 'Tableau de bord') · GesMA</title>
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <link rel="apple-touch-startup-image" href="/icons/icon-512.png">
-    <link rel="stylesheet" href="/css/app.css?v={{ config('gesma.asset_version', '1') }}">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-startup-image" href="{{ asset('icons/icon-512.png') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ config('gesma.asset_version', '1') }}">
     @stack('head')
 </head>
 <body>
@@ -21,7 +21,7 @@
 <div class="app">
     <aside class="sidebar" id="sidebar">
         <div class="brand">
-            <img src="/icons/icon.svg" alt="">
+            <img src="{{ asset('icons/icon.svg') }}" alt="">
             <div><strong>GesMA</strong><small>{{ config('gesma.company.name') }}</small></div>
         </div>
         <nav class="nav">
@@ -132,10 +132,11 @@
         dataUrl: @json(route('offline.data')),
         syncUrl: @json(route('sync')),
         offlineUrl: @json(route('offline')),
+        swUrl: @json(url('sw.js')),
     };
 </script>
-<script src="/js/offline-store.js?v={{ config('gesma.asset_version', '1') }}"></script>
-<script src="/js/app.js?v={{ config('gesma.asset_version', '1') }}"></script>
+<script src="{{ asset('js/offline-store.js') }}?v={{ config('gesma.asset_version', '1') }}"></script>
+<script src="{{ asset('js/app.js') }}?v={{ config('gesma.asset_version', '1') }}"></script>
 @stack('scripts')
 </body>
 </html>

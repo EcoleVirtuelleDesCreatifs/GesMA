@@ -80,7 +80,7 @@
 
     /* ---------------- Service worker (mode hors connexion) ---------------- */
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready).then((reg) => {
+        navigator.serviceWorker.register(cfg.swUrl || '/sw.js').then(() => navigator.serviceWorker.ready).then((reg) => {
             // Met en cache la page de saisie hors connexion de l'utilisateur connecté
             if (userId && navigator.onLine && reg.active) reg.active.postMessage({ type: 'cache-offline-page', url: cfg.offlineUrl });
         }).catch(() => {});

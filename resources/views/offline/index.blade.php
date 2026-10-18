@@ -139,5 +139,5 @@
 @endsection
 
 @push('scripts')
-<script src="/js/offline-page.js?v={{ config('gesma.asset_version', '1') }}"></script>
+<script src="{{ asset('js/offline-page.js') }}?v={{ config('gesma.asset_version', '1') }}"></script>
 @endpush

@@ -8,24 +8,24 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GesMA">
     <title>Connexion · GesMA</title>
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <link rel="apple-touch-startup-image" href="/icons/icon-512.png">
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-startup-image" href="{{ asset('icons/icon-512.png') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
 <div class="auth">
     <div class="card">
         <div class="logo">
-            <img src="/icons/icon.svg" alt="">
+            <img src="{{ asset('icons/icon.svg') }}" alt="">
             <h1>GesMA</h1>
             <small class="muted">{{ config('gesma.company.name') }} — espace de gestion</small>
         </div>
         @include('partials.flash')
         <div class="alert alert-warning hidden" id="login-offline">
             Pas de connexion Internet. Si vous vous êtes déjà connecté sur cet appareil,
-            <a href="/hors-ligne">ouvrez la saisie hors connexion</a>.
+            <a href="{{ route('offline') }}">ouvrez la saisie hors connexion</a>.
         </div>
         <form method="POST" action="{{ url('/login') }}">
             @csrf
@@ -42,7 +42,7 @@
         </form>
     </div>
 </div>
-<script src="/js/offline-store.js"></script>
+<script src="{{ asset('js/offline-store.js') }}"></script>
 <script>
     @if(session('clear_offline'))
         // Déconnexion : effacement des données locales de l'appareil
@@ -52,7 +52,7 @@
     @endif
     function updateOnline() { document.getElementById('login-offline').classList.toggle('hidden', navigator.onLine); }
     addEventListener('online', updateOnline); addEventListener('offline', updateOnline); updateOnline();
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register(@json(url('sw.js'))).catch(() => {});
 </script>
 </body>
 </html>
