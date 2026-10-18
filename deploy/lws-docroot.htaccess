@@ -1,25 +1,25 @@
-# .htaccess à placer dans le DOCROOT du domaine (un niveau au-dessus de l'app)
-# Ex. : ~/htdocs/gesma.mobilier-addict.com/.htaccess  — l'app étant dans  …/gesma/
+# .htaccess à placer dans le DOCROOT du domaine quand l'application est dans un sous-dossier.
+# Exemple : le docroot est ~/htdocs/gesma.mobilier-addict.com/ et l'app est dans ./gesma/
 # Installation : cp deploy/lws-docroot.htaccess ../.htaccess
+# Puis définir APP_URL=https://gesma.mobilier-addict.com/gesma
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Transférer l'en-tête Authorization pour l'API
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-    RewriteCond %{HTTP:X-API-KEY} .
-    RewriteRule .* - [E=HTTP_X_API_KEY:%{HTTP:X-API-KEY}]
 
-    # Bloquer les dossiers sensibles
-    RewriteRule ^\.(env|git) - [F,L]
-    RewriteRule ^gesma/(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|\.env)(/.*)?$ - [F,L]
+    # Bloquer les fichiers sensibles à l'intérieur de l'app
+    RewriteRule ^gesma/\.env$ - [F,L]
+    RewriteRule ^gesma/\.git.* - [F,L]
+    RewriteRule ^gesma/(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|package\.json|phpunit\.xml)(/.*)?$ - [F,L]
 
-    # /gesma tout court → /gesma/
-    RewriteRule ^gesma$ /gesma/ [R=301,L]
+    # /gesma tout court → /gesma/ (avec slash final)
+    RewriteRule ^gesma$ gesma/ [R=301,L]
 
-    # Tout /gesma/<route> qui n'est pas un vrai fichier → gesma/index.php
-    RewriteCond %{REQUEST_URI} ^/gesma/(.+)$
+    # Tout /gesma/<route> non existant → gesma/index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^gesma/ gesma/index.php [L]
+    RewriteRule ^gesma/(.*)$ gesma/index.php [L]
 </IfModule>

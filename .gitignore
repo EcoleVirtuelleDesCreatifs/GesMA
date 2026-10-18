@@ -9,3 +9,4 @@
 .phpunit.result.cache
 /.idea
 /.vscode
+*.sql

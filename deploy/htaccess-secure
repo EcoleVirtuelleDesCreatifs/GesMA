@@ -1,0 +1,21 @@
+# Version sécurisée du .htaccess pour hébergement mutualisé (LWS, OVH mutualisé, etc.)
+# Pas de directive Options, Header, Files ou balises complexes connues pour causer des 500.
+# À copier à la racine du projet si le docroot pointe sur la racine du projet.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Transférer l'en-tête Authorization (nécessaire pour l'API et l'authentification)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Bloquer l'accès direct aux fichiers/dossiers sensibles
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^\.git.* - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|package\.json|phpunit\.xml)(/.*)?$ - [F,L]
+
+    # Tout le reste passe par le contrôleur frontal
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

@@ -1,20 +1,18 @@
+# .htaccess racine pour hébergement mutualisé (LWS, OVH, etc.)
+# Utilisé quand le docroot pointe sur la racine du projet (index.php à la racine).
+# Version sécurisée. En cas de 500 avec ce fichier, remplacez-le par deploy/htaccess-minimal.
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Transférer l'en-tête d'autorisation et la clé API
+    # Transférer l'en-tête Authorization (API / authentification)
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-    RewriteCond %{HTTP:X-API-KEY} .
-    RewriteRule .* - [E=HTTP_X_API_KEY:%{HTTP:X-API-KEY}]
 
-    # Bloquer l'accès direct aux fichiers/dossiers sensibles du docroot
-    RewriteRule ^\.(env|git|gitignore|gitattributes) - [F,L]
-    RewriteRule ^(app|bootstrap|config|database|public|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|README|phpunit)(/.*)?$ - [F,L]
-
-    # Supprimer le slash de fin si ce n'est pas un dossier
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
+    # Bloquer l'accès direct aux fichiers/dossiers sensibles
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^\.git.* - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|package\.json|phpunit\.xml)(/.*)?$ - [F,L]
 
     # Tout le reste passe par le contrôleur frontal
     RewriteCond %{REQUEST_FILENAME} !-d

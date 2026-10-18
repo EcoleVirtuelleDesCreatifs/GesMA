@@ -1,0 +1,14 @@
+# Version MINIMALE du .htaccess pour hébergement mutualisé.
+# Aucune règle de sécurité : utiliser uniquement si la version sécurisée provoque une 500.
+# En production, privilégiez deploy/htaccess-secure.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
