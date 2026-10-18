@@ -122,6 +122,45 @@ Tâches planifiées (sauvegardes) — ajouter au crontab de `www-data` :
 
 ---
 
+## 2 bis. Hébergement mutualisé LWS (sans SSH)
+
+Organisation : le domaine pointe sur `htdocs/<domaine>/` et l'application est dans le sous-dossier
+`gesma/` (adresse `https://<domaine>/gesma`).
+
+1. Panneau LWS : choisir **PHP 8.2 ou 8.3**, créer la base **MySQL**, activer le **certificat SSL**.
+2. Télécharger `gesma-deploy.zip` (GitHub → *Actions* → *Archive de déploiement* → dernière exécution →
+   *Artifacts*) : il contient déjà `vendor/`. Le décompresser dans `htdocs/<domaine>/gesma/`.
+3. Copier `deploy/lws-docroot.htaccess` en `htdocs/<domaine>/.htaccess` (dossier parent).
+4. Copier `.env.production.lws` en `.env` et compléter `APP_URL` (avec `/gesma`), `DB_DATABASE`,
+   `DB_USERNAME`, `DB_PASSWORD` (`DB_HOST` est indiqué par LWS) et un `GESMA_INSTALL_TOKEN`
+   d'au moins 16 caractères.
+5. Ouvrir `https://<domaine>/gesma/installation.php?token=<GESMA_INSTALL_TOKEN>` : la page génère
+   `APP_KEY`, puis **la recharger une fois** pour créer les tables, les magasins et les comptes
+   (mot de passe initial `GesMA2026!`, à changer).
+6. **Vider `GESMA_INSTALL_TOKEN`** dans `.env` : la page répond alors « Introuvable ».
+7. Tâche Cron LWS toutes les minutes : `cd /chemin/htdocs/<domaine>/gesma && php artisan schedule:run`.
+
+**Mise à jour** : envoyer la nouvelle archive sans écraser `.env` ni `storage/`, remettre un jeton,
+rouvrir `installation.php?token=...` (migrations + vidage des caches), puis vider le jeton.
+
+**Erreur 500** : causes habituelles, à vérifier dans l'ordre :
+
+| Cause | Correction |
+|-------|-----------|
+| PHP inférieur à 8.2 | Panneau LWS → version PHP du domaine |
+| `vendor/` absent (pas dans Git) | Envoyer `gesma-deploy.zip` |
+| `.env` absent, `APP_KEY` vide | `.env.production.lws` → `.env`, puis `installation.php` |
+| Sessions/cache en base avant les migrations | `SESSION_DRIVER=file`, `CACHE_STORE=file` (déjà dans le modèle) |
+| `storage/`, `bootstrap/cache/` non inscriptibles | Droits 775 (ou 755) par FTP |
+| `bootstrap/cache/*.php` venant d'un autre poste | Les supprimer (l'installation le fait) |
+
+Pour trouver la cause exacte : copier `deploy/diagnostic.php` à la racine de l'application sous un nom
+difficile à deviner (ex. `diag-7f3k.php`), l'ouvrir dans le navigateur (PHP, extensions, `vendor/`,
+`.env`, droits, MySQL, dernière erreur des journaux), puis **le supprimer**.
+
+Particularités déjà prises en charge : fichiers statiques servis depuis `public/` par le `.htaccess`,
+file d'attente `sync` (aucun worker), sauvegarde `gesma:backup` en PHP quand `mysqldump` est absent.
+
 ## 3. Sauvegardes et restauration (section 14)
 
 - `php artisan gesma:backup` crée une copie compressée de la base dans `storage/app/backups/` ; elle est lancée **chaque nuit à 2 h** et les copies de plus de 14 jours sont supprimées (`GESMA_BACKUP_KEEP_DAYS`).

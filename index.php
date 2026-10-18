@@ -22,10 +22,4 @@ require __DIR__.'/vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/bootstrap/app.php';
 
-// Si le contrôleur frontal n'est pas dans public/, on ajuste le chemin public
-// (cas d'un hébergement mutualisé où le docroot pointe sur la racine du projet).
-if (basename(__DIR__) !== 'public') {
-    $app->usePublicPath(__DIR__);
-}
-
 $app->handleRequest(Request::capture());

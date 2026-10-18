@@ -6,14 +6,18 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Transférer l'en-tête Authorization pour l'API
+    # Transférer l'en-tête Authorization et la clé API
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteCond %{HTTP:X-API-KEY} .
+    RewriteRule .* - [E=HTTP_X_API_KEY:%{HTTP:X_API_KEY}]
+
+    # Fichiers statiques rangés dans gesma/public/
+    RewriteRule ^gesma/((css|js|icons|logo|storage)/.+|sw\.js|manifest\.webmanifest|robots\.txt|favicon\.ico)$ gesma/public/$1 [L]
 
     # Bloquer les fichiers sensibles à l'intérieur de l'app
-    RewriteRule ^gesma/\.env$ - [F,L]
-    RewriteRule ^gesma/\.git.* - [F,L]
-    RewriteRule ^gesma/(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|package\.json|phpunit\.xml)(/.*)?$ - [F,L]
+    RewriteRule ^gesma/\.(env|git|gitignore|gitattributes) - [F,L]
+    RewriteRule ^gesma/(app|bootstrap|config|database|public|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|README|phpunit)(/.*)?$ - [F,L]
 
     # /gesma tout court → /gesma/ (avec slash final)
     RewriteRule ^gesma$ gesma/ [R=301,L]

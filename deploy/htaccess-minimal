@@ -1,6 +1,6 @@
 # Version MINIMALE du .htaccess pour hébergement mutualisé.
 # Aucune règle de sécurité : utiliser uniquement si la version sécurisée provoque une 500.
-# En production, privilégiez deploy/htaccess-secure.
+# Les assets doivent être accessibles (via réécriture public/ ou remontés à la racine).
 
 <IfModule mod_rewrite.c>
     RewriteEngine On

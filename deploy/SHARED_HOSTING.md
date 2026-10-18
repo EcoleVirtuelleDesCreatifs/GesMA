@@ -7,21 +7,22 @@
 - MySQL / MariaDB.
 - `mod_rewrite` activé (la plupart des mutualisés l'ont).
 
-## Choix de l'architecture
+## Architecture recommandée : docroot = racine du projet
 
-### Option A — recommandée : docroot = racine du projet
-
-Le domaine/sous-domaine pointe directement sur le dossier contenant `index.php` à la racine du projet Laravel.
+Le domaine/sous-domaine pointe sur le dossier contenant `index.php` à la racine du projet Laravel. Les assets restent dans `public/` ; le `.htaccess` racine les sert automatiquement par réécriture.
 
 ```
 ~/htdocs/gesma.mobilier-addict.com/
 ├── index.php        <-- contrôleur frontal
 ├── .htaccess
 ├── .env
-├── css/
-├── js/
-├── sw.js
-├── manifest.webmanifest
+├── public/
+│   ├── css/
+│   ├── js/
+│   ├── icons/
+│   ├── logo/
+│   ├── sw.js
+│   └── manifest.webmanifest
 ├── artisan
 ├── app/
 ├── bootstrap/
@@ -39,19 +40,17 @@ Dans `.env` :
 APP_URL=https://gesma.mobilier-addict.com
 ```
 
-L'application est conçue pour ce mode : le `index.php` racine détecte qu'il n'est pas dans `public/` et ajuste automatiquement le chemin public.
+Avantages :
 
-### Option B : docroot = dossier `public/`
+- Structure Laravel standard conservée.
+- Pas besoin de déplacer les assets.
+- Mise à jour par `git pull` simple.
 
-Si l'hébergeur permet de choisir le docroot, pointez-le sur `public/` et utilisez le fichier `public/index.php` fourni.
+## Alternative : docroot = dossier `public/`
 
-Dans `.env` :
+Si l'hébergeur permet de choisir le docroot, pointez-le sur `public/` et utilisez le fichier `public/index.php` fourni. Dans ce cas `public/.htaccess` est utilisé.
 
-```env
-APP_URL=https://gesma.mobilier-addict.com
-```
-
-### Option C : application dans un sous-dossier `/gesma`
+## Alternative : application dans un sous-dossier `/gesma`
 
 Si le domaine doit servir d'autres fichiers à la racine et que l'app est dans un sous-dossier `gesma/` :
 
@@ -61,8 +60,9 @@ Si le domaine doit servir d'autres fichiers à la racine et que l'app est dans u
 │   ├── index.php
 │   ├── .htaccess
 │   ├── .env
+│   ├── public/
 │   └── ...
-└── .htaccess   <-- celui-ci doit router /gesma/... vers gesma/index.php
+└── .htaccess   <-- celui-ci route /gesma/... vers gesma/index.php
 ```
 
 Dans `.env` :
@@ -99,6 +99,15 @@ cp deploy/lws-docroot.htaccess ../.htaccess
 
 3. **Configurer `.env`** :
 
+   Pour un déploiement LWS sans SSH, copiez le modèle fourni :
+
+   ```bash
+   cp .env.production.lws .env
+   nano .env
+   ```
+
+   Valeurs importantes :
+
    ```env
    APP_NAME=GesMA
    APP_ENV=production
@@ -107,20 +116,30 @@ cp deploy/lws-docroot.htaccess ../.htaccess
    # ou https://gesma.mobilier-addict.com/gesma en sous-dossier
 
    DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
+   DB_HOST=localhost
    DB_PORT=3306
-   DB_DATABASE=gesma
-   DB_USERNAME=votre_user_mysql
-   DB_PASSWORD=votre_mot_de_passe
+   DB_DATABASE=votre_db
+   DB_USERNAME=votre_user
+   DB_PASSWORD=votre_mdp
 
-   SESSION_SECURE_COOKIE=true
+   # Sur mutualisé, fichier plutôt que base de données avant migration
+   SESSION_DRIVER=file
+   CACHE_STORE=file
+   QUEUE_CONNECTION=sync
+
+   GESMA_WEBSITE_API_KEY=votre_cle_api
+   GESMA_WEBSITE_DEFAULT_STORE=YAM
    ```
 
-4. **Créer la base de données** (si ce n'est pas déjà fait) et migrer :
+4. **Créer la base de données** :
+
+   Si vous avez accès SSH :
 
    ```bash
    php artisan migrate --force
    ```
+
+   Sinon, utilisez la page web `installation.php` (voir section ci-dessous).
 
 5. **Permissions** (très important sur mutualisé) :
 
@@ -146,6 +165,48 @@ cp deploy/lws-docroot.htaccess ../.htaccess
    curl -sI https://gesma.mobilier-addict.com/login
    curl -sI https://gesma.mobilier-addict.com/css/app.css
    ```
+
+## Installation sans SSH : `installation.php`
+
+Un fichier `installation.php` est fourni à la racine. Il permet d'installer l'application depuis un navigateur.
+
+1. Dans `.env`, définissez un jeton sécurisé :
+
+   ```env
+   GESMA_INSTALL_TOKEN=votre_jeton_aleatoire_min_16_caracteres
+   ```
+
+2. Envoyez les fichiers de l'application sur le serveur (via FTP ou `git pull`).
+
+3. Ouvrez dans le navigateur :
+
+   ```
+   https://gesma.mobilier-addict.com/installation.php?token=votre_jeton_aleatoire_min_16_caracteres
+   ```
+
+   La page génère `APP_KEY`, crée les tables et les comptes par défaut.
+
+4. **Supprimez ou videz le jeton** après installation :
+
+   ```env
+   GESMA_INSTALL_TOKEN=
+   ```
+
+## Diagnostic : `deploy/diagnostic.php`
+
+Pour obtenir la vraie erreur quand LWS affiche sa page 500 générique :
+
+```bash
+cd ~/htdocs/gesma.mobilier-addict.com
+cp deploy/diagnostic.php diagnostic.php
+curl -s https://gesma.mobilier-addict.com/diagnostic.php
+```
+
+Puis supprimez le fichier en production :
+
+```bash
+rm diagnostic.php
+```
 
 ## Si une 500 persiste
 
@@ -199,10 +260,14 @@ Sur Safari, les redirections 301 sont mises en cache de façon permanente. En ca
 
 - `index.php` (racine) : contrôleur frontal pour docroot = racine du projet.
 - `public/index.php` : contrôleur frontal standard pour docroot = `public/`.
-- `.htaccess` / `public/.htaccess` : version sécurisée.
+- `.htaccess` / `public/.htaccess` : version sécurisée avec réécriture des assets public/.
 - `deploy/htaccess-secure` : copie de la version sécurisée.
 - `deploy/htaccess-minimal` : version minimale en cas de 500 liée au `.htaccess`.
 - `deploy/lws-docroot.htaccess` : à placer un niveau au-dessus si l'app est dans un sous-dossier `/gesma`.
+- `deploy/diagnostic.php` : diagnostic des erreurs 500.
+- `deploy/SHARED_HOSTING.md` : ce guide.
+- `.env.production.lws` : modèle de `.env` pour LWS.
+- `installation.php` : installation web sans SSH.
 
 ## API du site web
 

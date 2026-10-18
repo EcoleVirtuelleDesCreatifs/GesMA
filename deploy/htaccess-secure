@@ -1,18 +1,28 @@
-# Version sécurisée du .htaccess pour hébergement mutualisé (LWS, OVH mutualisé, etc.)
+# Version sécurisée du .htaccess pour hébergement mutualisé (LWS, OVH, etc.)
 # Pas de directive Options, Header, Files ou balises complexes connues pour causer des 500.
+# Les assets restent dans public/ ; ils sont servis par réécriture.
 # À copier à la racine du projet si le docroot pointe sur la racine du projet.
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Transférer l'en-tête Authorization (nécessaire pour l'API et l'authentification)
+    # Transférer l'en-tête Authorization et la clé API
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteCond %{HTTP:X-API-KEY} .
+    RewriteRule .* - [E=HTTP_X_API_KEY:%{HTTP:X_API_KEY}]
+
+    # Fichiers statiques rangés dans public/
+    RewriteRule ^((css|js|icons|logo|storage)/.+|sw\.js|manifest\.webmanifest|robots\.txt|favicon\.ico)$ public/$1 [L]
 
     # Bloquer l'accès direct aux fichiers/dossiers sensibles
-    RewriteRule ^\.env$ - [F,L]
-    RewriteRule ^\.git.* - [F,L]
-    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|package\.json|phpunit\.xml)(/.*)?$ - [F,L]
+    RewriteRule ^\.(env|git|gitignore|gitattributes) - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|public|resources|routes|storage|tests|vendor|artisan|composer\.(json|lock)|README|phpunit)(/.*)?$ - [F,L]
+
+    # Supprimer le slash de fin si ce n'est pas un dossier
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
 
     # Tout le reste passe par le contrôleur frontal
     RewriteCond %{REQUEST_FILENAME} !-d
