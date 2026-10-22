@@ -17,6 +17,25 @@ return [
     ],
 
     /*
+    | Identité légale utilisée sur les devis et factures PDF
+    | (en-tête, slogan et pied de page — modèle "MOBILIER GROUP'S").
+    */
+    'documents' => [
+        'initials' => 'MG',
+        'name' => "MOBILIER GROUP'S",
+        'legal_form' => 'SARL',
+        'location' => 'Abidjan – Bingerville – Abatta',
+        'phone1' => '07 99 14 03 56',
+        'phone2' => '07 01 60 52 32',
+        'slogan' => 'Literie · Électroménagers · Mobilier · Décoration · Plomberie · Sanitaire · Électricité · Matériaux de construction',
+        'capital' => '5 000 000 F CFA',
+        'siege' => 'Abidjan, Bingerville, Abatta, à 100 m du supermarché AB CENTER',
+        'rccm' => 'CI-ABJ-03-2024-B12-02963',
+        'cc' => '2402115 F',
+        'quote_validity_days' => 30,
+    ],
+
+    /*
     | Profils utilisateurs (section 13 du cahier des charges)
     */
     'roles' => [
