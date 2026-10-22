@@ -7,26 +7,12 @@
 </head>
 <body>
 @php($company = config('gesma.company'))
-<div class="footer">
-    {{ $company['slogan'] }}<br>
-    {{ $company['products_line'] }}<br>
-    Tél. {{ $company['phone'] }} — {{ $company['website'] }}<br>
-    {{ $company['name'] }} — {{ $title }} — généré le {{ now()->format('d/m/Y à H:i') }} par {{ $generatedBy->name }} (GesMA)
-</div>
+@include('pdf._letterhead')
 
-<div class="header">
-    <table><tr>
-        <td class="logo-cell">@include('pdf._logo')</td>
-        <td>
-            <div class="muted" style="font-size:9px">GesMA — rapport de gestion</div>
-        </td>
-        <td class="right">
-            <h1>{{ $title }}</h1>
-            <div class="muted">{{ $store?->name ?? ($generatedBy->isDirection() ? 'Tous les magasins' : $generatedBy->store?->name) }}</div>
-            @if($type !== 'stocks')<div class="muted">Période : {{ $period->label() }}</div>@else<div class="muted">Situation au {{ now()->format('d/m/Y H:i') }}</div>@endif
-        </td>
-    </tr></table>
-</div>
+<div class="mg-dateline">Abidjan, le {{ now()->format('d/m/Y') }}</div>
+<div class="mg-refline">Réf. : RPT-{{ strtoupper($type) }}-{{ now()->format('Ymd') }}</div>
+<div class="mg-refline">Objet : {{ $title }} — {{ $store?->name ?? ($generatedBy->isDirection() ? 'Tous les magasins' : $generatedBy->store?->name) }}@if($type !== 'stocks') — {{ $period->label() }}@else — situation au {{ now()->format('d/m/Y H:i') }}@endif</div>
+<div class="muted" style="font-size:7.5px; margin-bottom:6px">Généré par {{ $generatedBy->name }} — GesMA</div>
 
 @if($type === 'ventes')
     <table class="kpis"><tr>

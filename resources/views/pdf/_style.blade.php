@@ -63,4 +63,10 @@
     .mg-footer { position: fixed; bottom: -58px; left: 0; right: 0; text-align: center; font-size: 7px; color: #6E7488; line-height: 1.5; }
     .mg-footer .sep { border-top: 1px solid #1F3864; margin-bottom: 4px; }
     .mg-footer .legal { color: #1F3864; font-weight: bold; font-size: 7.5px; }
+    .mg-band { position: fixed; left: -32px; right: -32px; height: 10px; background: #1F3864; }
+    .mg-band-top { top: -28px; }
+    .mg-band-bottom { bottom: -72px; }
+    .mg-refline { font-size: 9px; margin: 4px 0; }
+    .mg-refline .dots { display: inline-block; border-bottom: 0.7px solid #9FB2D8; min-width: 160px; }
+    .mg-dateline { text-align: right; font-size: 9px; margin: 6px 0; }
 </style>
