@@ -100,6 +100,16 @@ class DocumentController extends Controller
             ->download($document->number . '.pdf');
     }
 
+    /** Téléchargement public du PDF via lien signé (partage WhatsApp). */
+    public function sharedPdf(Document $document)
+    {
+        $document->load('items', 'customer', 'store', 'user');
+
+        return Pdf::loadView('pdf.document', ['document' => $document])
+            ->setPaper('a4')
+            ->download($document->number . '.pdf');
+    }
+
     public function convert(Request $request, Document $document, DocumentService $service)
     {
         $this->authorizeStore($request, $document);

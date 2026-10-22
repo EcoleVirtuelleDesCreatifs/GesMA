@@ -8,6 +8,7 @@
     </div>
     <div class="actions">
         <a class="btn btn-primary" href="{{ route('documents.pdf', $document) }}">Télécharger le PDF</a>
+        <a class="btn btn-whatsapp" href="{{ whatsapp_document_link($document) }}" target="_blank" rel="noopener">Partager WhatsApp</a>
         @if($document->isQuote())
             @if($invoice)
                 <a class="btn" href="{{ route('documents.show', $invoice) }}">Voir la facture {{ $invoice->number }}</a>

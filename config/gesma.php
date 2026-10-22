@@ -33,6 +33,8 @@ return [
         'rccm' => 'CI-ABJ-03-2024-B12-02963',
         'cc' => '2402115 F',
         'quote_validity_days' => 30,
+        // Indicatif pays utilisé pour les partages WhatsApp (Côte d'Ivoire : 225)
+        'whatsapp_country_code' => '225',
     ],
 
     /*

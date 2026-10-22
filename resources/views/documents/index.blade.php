@@ -37,6 +37,7 @@
                     <td data-label="Montant" class="right num">@money($d->total)</td>
                     <td data-label="" class="actions">
                         <a class="btn btn-sm" href="{{ route('documents.pdf', $d) }}">PDF</a>
+                        <a class="btn btn-sm btn-whatsapp" href="{{ whatsapp_document_link($d) }}" target="_blank" rel="noopener">WhatsApp</a>
                         @can('documents.delete')
                             <form method="POST" action="{{ route('documents.destroy', $d) }}" class="inline-form" onsubmit="return confirm('Supprimer {{ $d->typeLabel() }} {{ $d->number }} ? Cette action est définitive.')">
                                 @csrf @method('DELETE')

@@ -22,6 +22,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
 });
 
+// Lien public signé pour télécharger un document (devis/facture) sans connexion.
+// Utilisé par le bouton "Partager WhatsApp" — le lien expire automatiquement.
+Route::get('/documents/{document}/partage-pdf', [DocumentController::class, 'sharedPdf'])
+    ->middleware('signed')
+    ->name('documents.share.pdf');
+
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/mot-de-passe', [LoginController::class, 'editPassword'])->name('password.edit');

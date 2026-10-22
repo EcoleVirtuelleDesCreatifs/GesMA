@@ -111,6 +111,56 @@ if (! function_exists('montant_lettres')) {
     }
 }
 
+if (! function_exists('whatsapp_number')) {
+    /** Numéro au format international pour wa.me : "07 99 14 03 56" -> "2250799140356". */
+    function whatsapp_number(?string $phone, string $defaultCountryCode = '225'): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $phone);
+        if ($digits === '') {
+            return null;
+        }
+        if (str_starts_with($digits, '00')) {
+            return substr($digits, 2);
+        }
+        if (! str_starts_with($digits, $defaultCountryCode)) {
+            return $defaultCountryCode . $digits;
+        }
+
+        return $digits;
+    }
+}
+
+if (! function_exists('whatsapp_share_url')) {
+    /** URL https://wa.me/<numero>?text=<message>. */
+    function whatsapp_share_url(?string $phone, string $message): string
+    {
+        return 'https://wa.me/' . ($phone ?? '') . '?text=' . rawurlencode($message);
+    }
+}
+
+if (! function_exists('whatsapp_document_link')) {
+    /** Lien wa.me pré-rempli : résumé du document + URL signée (7 jours) du PDF. */
+    function whatsapp_document_link(\App\Models\Document $document): string
+    {
+        $phone = whatsapp_number(
+            $document->customer?->phone,
+            config('gesma.documents.whatsapp_country_code', '225')
+        );
+        $pdfUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'documents.share.pdf',
+            now()->addDays(7),
+            ['document' => $document->id]
+        );
+        $type = $document->isQuote() ? 'devis' : 'facture';
+        $name = $document->customer->name ?? 'Client';
+        $message = "Bonjour {$name},\n"
+            . "Voici votre {$type} {$document->number} — Total : " . money($document->total) . ".\n"
+            . "Téléchargez le PDF ici : {$pdfUrl}";
+
+        return whatsapp_share_url($phone, $message);
+    }
+}
+
 if (! function_exists('status_badge')) {
     /** Classe CSS du badge selon le statut */
     function status_badge(?string $status): string
