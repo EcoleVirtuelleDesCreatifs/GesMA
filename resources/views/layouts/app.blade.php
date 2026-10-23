@@ -46,6 +46,30 @@
                 <a href="{{ route('expenses.index') }}" class="{{ request()->routeIs('expenses.*') ? 'active' : '' }}">Dépenses</a>
             @endcan
 
+            @canany(['suppliers.view', 'purchases.view', 'receipts.view', 'supplier_invoices.view', 'supplier_payments.view', 'supplier_returns.view'])
+                <div class="section">Fournisseurs</div>
+            @endcanany
+            @can('suppliers.view')
+                <a href="{{ route('suppliers.dashboard') }}" class="{{ request()->routeIs('suppliers.dashboard') ? 'active' : '' }}">Tableau de bord achats</a>
+                <a href="{{ route('suppliers.index') }}" class="{{ request()->routeIs('suppliers.index', 'suppliers.show', 'suppliers.create', 'suppliers.edit') ? 'active' : '' }}">Fournisseurs</a>
+                <a href="{{ route('suppliers.products') }}" class="{{ request()->routeIs('suppliers.products') ? 'active' : '' }}">Produits fournisseurs</a>
+            @endcan
+            @can('purchases.view')
+                <a href="{{ route('purchases.index') }}" class="{{ request()->routeIs('purchases.*') ? 'active' : '' }}">Commandes d'achat</a>
+            @endcan
+            @can('receipts.view')
+                <a href="{{ route('receipts.index') }}" class="{{ request()->routeIs('receipts.*') ? 'active' : '' }}">Réceptions</a>
+            @endcan
+            @can('supplier_invoices.view')
+                <a href="{{ route('supplier-invoices.index') }}" class="{{ request()->routeIs('supplier-invoices.*') ? 'active' : '' }}">Factures fournisseurs</a>
+            @endcan
+            @can('supplier_payments.view')
+                <a href="{{ route('supplier-payments.index') }}" class="{{ request()->routeIs('supplier-payments.*') ? 'active' : '' }}">Paiements & dettes</a>
+            @endcan
+            @can('supplier_returns.view')
+                <a href="{{ route('supplier-returns.index') }}" class="{{ request()->routeIs('supplier-returns.*') ? 'active' : '' }}">Retours fournisseurs</a>
+            @endcan
+
             <div class="section">Catalogue</div>
             @can('products.view')
                 <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'active' : '' }}">Produits</a>

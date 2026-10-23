@@ -45,6 +45,8 @@ return [
         'responsable' => 'Responsable de magasin',
         'vendeur' => 'Équipe de vente',
         'logistique' => 'Équipe logistique',
+        'achats' => 'Responsable des achats',
+        'comptable' => 'Comptable',
     ],
 
     /*
@@ -76,6 +78,21 @@ return [
         'expenses.manage' => ['responsable'],
         'reports.view' => ['responsable'],
         'conflicts.view' => ['responsable'],
+        // Module Fournisseurs / approvisionnement
+        'suppliers.view' => ['achats', 'comptable', 'logistique', 'responsable'],
+        'suppliers.manage' => ['achats'],
+        'purchases.view' => ['achats', 'comptable', 'logistique', 'responsable'],
+        'purchases.manage' => ['achats'],
+        'purchases.validate' => [], // direction uniquement
+        'receipts.view' => ['achats', 'logistique', 'responsable', 'comptable'],
+        'receipts.manage' => ['logistique', 'achats', 'responsable'],
+        'supplier_invoices.view' => ['comptable', 'achats'],
+        'supplier_invoices.manage' => ['comptable'],
+        'supplier_payments.view' => ['comptable', 'achats'],
+        'supplier_payments.manage' => ['comptable'],
+        'supplier_returns.view' => ['achats', 'comptable', 'logistique', 'responsable'],
+        'supplier_returns.manage' => ['achats', 'logistique'],
+        'supplier_reports.view' => ['achats', 'comptable', 'responsable'],
         'stores.manage' => [],
         'users.manage' => [],
         'activity.view' => [],
@@ -155,6 +172,49 @@ return [
         'correction' => 'Correction',
         'transfert_sortant' => 'Transfert sortant',
         'transfert_entrant' => 'Transfert entrant',
+        'approvisionnement' => 'Réception fournisseur',
+        'retour_fournisseur' => 'Retour fournisseur',
+    ],
+
+    'purchase_statuses' => [
+        'brouillon' => 'Brouillon',
+        'en_attente' => 'En attente de validation',
+        'validee' => 'Validée',
+        'envoyee' => 'Envoyée au fournisseur',
+        'partielle' => 'Partiellement réceptionnée',
+        'receptionnee' => 'Réceptionnée',
+        'annulee' => 'Annulée',
+    ],
+
+    // Transitions autorisées d'une commande d'achat
+    'purchase_transitions' => [
+        'brouillon' => ['en_attente', 'annulee'],
+        'en_attente' => ['validee', 'annulee'],
+        'validee' => ['envoyee', 'annulee'],
+        'envoyee' => ['partielle', 'receptionnee', 'annulee'],
+        'partielle' => ['receptionnee', 'annulee'],
+        'receptionnee' => [],
+        'annulee' => [],
+    ],
+
+    'supplier_return_statuses' => [
+        'declaree' => 'Déclaré',
+        'envoyee' => 'Retourné au fournisseur',
+        'terminee' => 'Terminé',
+    ],
+
+    'supplier_return_decisions' => [
+        'remplacement' => 'Remplacement',
+        'remboursement' => 'Remboursement',
+        'avoir' => 'Avoir',
+    ],
+
+    'supplier_types' => [
+        'grossiste' => 'Grossiste',
+        'fabricant' => 'Fabricant',
+        'importateur' => 'Importateur',
+        'distributeur' => 'Distributeur',
+        'autre' => 'Autre',
     ],
 
     'default_low_stock_threshold' => 3,

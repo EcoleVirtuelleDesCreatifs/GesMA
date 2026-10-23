@@ -7,12 +7,18 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierInvoiceController;
+use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\SupplierReturnController;
 use App\Http\Controllers\SyncConflictController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -109,6 +115,71 @@ Route::middleware('auth')->group(function () {
         Route::post('/documents/{document}/facturer', [DocumentController::class, 'convert'])->middleware('role:documents.manage')->name('documents.convert');
         Route::put('/documents/{document}/reglement', [DocumentController::class, 'payment'])->middleware('role:documents.manage')->name('documents.payment');
         Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->middleware('role:documents.delete')->name('documents.destroy');
+    });
+
+    // Module Fournisseurs / approvisionnement
+    Route::middleware('role:suppliers.view')->group(function () {
+        Route::get('/fournisseurs/tableau-de-bord', [SupplierController::class, 'dashboard'])->name('suppliers.dashboard');
+        Route::get('/fournisseurs', [SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('/fournisseurs/produits', [SupplierController::class, 'productsIndex'])->name('suppliers.products');
+        Route::middleware('role:suppliers.manage')->group(function () {
+            Route::get('/fournisseurs/nouveau', [SupplierController::class, 'create'])->name('suppliers.create');
+            Route::post('/fournisseurs', [SupplierController::class, 'store'])->name('suppliers.store');
+            Route::post('/fournisseurs/{supplier}/produits', [SupplierController::class, 'attachProduct'])->name('suppliers.products.attach');
+            Route::put('/fournisseurs/{supplier}/produits/{product}', [SupplierController::class, 'updateProduct'])->name('suppliers.products.update');
+            Route::delete('/fournisseurs/{supplier}/produits/{product}', [SupplierController::class, 'detachProduct'])->name('suppliers.products.detach');
+            Route::post('/fournisseurs/{supplier}/documents', [SupplierController::class, 'attachDocument'])->name('suppliers.documents.attach');
+            Route::put('/fournisseurs/{supplier}/reactiver', [SupplierController::class, 'restore'])->name('suppliers.restore');
+        });
+        Route::get('/fournisseurs/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+        Route::get('/fournisseurs/{supplier}/modifier', [SupplierController::class, 'edit'])->middleware('role:suppliers.manage')->name('suppliers.edit');
+        Route::put('/fournisseurs/{supplier}', [SupplierController::class, 'update'])->middleware('role:suppliers.manage')->name('suppliers.update');
+        Route::delete('/fournisseurs/{supplier}', [SupplierController::class, 'destroy'])->middleware('role:suppliers.manage')->name('suppliers.destroy');
+        Route::get('/fournisseurs/documents/{document}/telecharger', [SupplierController::class, 'downloadDocument'])->name('suppliers.documents.download');
+    });
+
+    // Commandes d'achat
+    Route::middleware('role:purchases.view')->group(function () {
+        Route::get('/achats', [PurchaseOrderController::class, 'index'])->name('purchases.index');
+        Route::get('/achats/nouveau', [PurchaseOrderController::class, 'create'])->middleware('role:purchases.manage')->name('purchases.create');
+        Route::post('/achats', [PurchaseOrderController::class, 'store'])->middleware('role:purchases.manage')->name('purchases.store');
+        Route::get('/achats/{purchase}', [PurchaseOrderController::class, 'show'])->name('purchases.show');
+        Route::get('/achats/{purchase}/pdf', [PurchaseOrderController::class, 'pdf'])->name('purchases.pdf');
+        Route::put('/achats/{purchase}/statut', [PurchaseOrderController::class, 'status'])->name('purchases.status');
+    });
+
+    // Réceptions
+    Route::middleware('role:receipts.view')->group(function () {
+        Route::get('/receptions', [GoodsReceiptController::class, 'index'])->name('receipts.index');
+        Route::get('/receptions/{receipt}', [GoodsReceiptController::class, 'show'])->name('receipts.show');
+        Route::middleware('role:receipts.manage')->group(function () {
+            Route::get('/achats/{purchase}/recevoir', [GoodsReceiptController::class, 'create'])->name('receipts.create');
+            Route::post('/achats/{purchase}/recevoir', [GoodsReceiptController::class, 'store'])->name('receipts.store');
+        });
+    });
+
+    // Factures fournisseurs et règlements
+    Route::middleware('role:supplier_invoices.view')->group(function () {
+        Route::get('/factures-fournisseurs', [SupplierInvoiceController::class, 'index'])->name('supplier-invoices.index');
+        Route::get('/factures-fournisseurs/nouvelle', [SupplierInvoiceController::class, 'create'])->middleware('role:supplier_invoices.manage')->name('supplier-invoices.create');
+        Route::post('/factures-fournisseurs', [SupplierInvoiceController::class, 'store'])->middleware('role:supplier_invoices.manage')->name('supplier-invoices.store');
+        Route::get('/factures-fournisseurs/{supplierInvoice}', [SupplierInvoiceController::class, 'show'])->name('supplier-invoices.show');
+        Route::get('/factures-fournisseurs/{supplierInvoice}/piece', [SupplierInvoiceController::class, 'attachment'])->name('supplier-invoices.attachment');
+        Route::post('/factures-fournisseurs/{supplierInvoice}/reglement', [SupplierInvoiceController::class, 'storePayment'])->middleware('role:supplier_payments.manage')->name('supplier-invoices.pay');
+    });
+    Route::middleware('role:supplier_payments.view')->group(function () {
+        Route::get('/paiements-dettes', [SupplierPaymentController::class, 'index'])->name('supplier-payments.index');
+    });
+
+    // Retours fournisseurs
+    Route::middleware('role:supplier_returns.view')->group(function () {
+        Route::get('/retours-fournisseurs', [SupplierReturnController::class, 'index'])->name('supplier-returns.index');
+        Route::middleware('role:supplier_returns.manage')->group(function () {
+            Route::get('/retours-fournisseurs/nouveau', [SupplierReturnController::class, 'create'])->name('supplier-returns.create');
+            Route::post('/retours-fournisseurs', [SupplierReturnController::class, 'store'])->name('supplier-returns.store');
+            Route::put('/retours-fournisseurs/{supplierReturn}/statut', [SupplierReturnController::class, 'status'])->name('supplier-returns.status');
+        });
+        Route::get('/retours-fournisseurs/{supplierReturn}', [SupplierReturnController::class, 'show'])->name('supplier-returns.show');
     });
 
     // Dépenses
