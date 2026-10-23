@@ -12,10 +12,8 @@
 
 <table style="width:100%">
     <tr>
-        <td style="width:46px; vertical-align:top"><span class="mg-logo">{{ $id['initials'] }}</span></td>
-        <td style="vertical-align:top; padding-left:8px">
-            <span class="mg-name">{{ $id['name'] }}</span><br>
-            <span class="mg-legal">{{ $id['legal_form'] }}</span>
+        <td style="width:62%; vertical-align:top">
+            <img src="{{ public_path('logo/01_horizontal_couleur_2500px.png') }}" style="width:230px" alt="{{ $id['name'] }}">
         </td>
         <td class="right" style="vertical-align:top; font-size:8.5px">
             <span class="mg-navy" style="font-weight:bold">{{ $id['location'] }}</span><br>
