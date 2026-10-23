@@ -117,7 +117,9 @@
         <td style="width:8%"></td>
         <td style="vertical-align:top">
             <div class="lbl">Signature et cachet</div>
-            <div class="box"></div>
+            <div class="box" style="text-align:center; padding-top:6px">
+                <img src="{{ public_path('img/cachet.png') }}" style="width:170px; opacity:0.9">
+            </div>
         </td>
     </tr>
 </table>
