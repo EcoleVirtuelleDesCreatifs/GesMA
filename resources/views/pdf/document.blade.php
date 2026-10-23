@@ -24,9 +24,9 @@
         <td style="width:55%; vertical-align:top">
             <div class="mg-client">
                 <div class="t">CLIENT</div>
-                <div>Nom : {{ $document->customer->name ?: ' ' }}@unless($document->customer->name)<div class="line"></div>@endunless</div>
-                <div>Adresse : {{ $document->customer->address ?? $document->customer->city ?? ' ' }}@unless($document->customer->address || $document->customer->city)<div class="line"></div>@endunless</div>
-                <div>Tél : {{ $document->customer->phone ?? ' ' }}@unless($isQuote) <span style="margin-left:14px">N° CC : ________</span>@endunless</div>
+                <div class="mg-f">Nom : <span class="fl">{{ $document->customer->name }}</span></div>
+                <div class="mg-f">Adresse : <span class="fl">{{ $document->customer->address ?? $document->customer->city }}</span></div>
+                <div class="mg-f">Tél : <span class="fl">{{ $document->customer->phone }}</span>@unless($isQuote) <span style="margin-left:14px">N° CC : <span class="fl"></span></span>@endunless</div>
             </div>
         </td>
         <td style="vertical-align:top">
@@ -55,8 +55,9 @@
         </tr>
     </thead>
     <tbody>
+        @php($fixedRows = $isQuote ? 9 : 10)
         @foreach($document->items as $item)
-        <tr class="{{ $loop->even ? 'alt' : '' }}">
+        <tr class="{{ $loop->odd ? 'alt' : '' }}">
             <td class="center">{{ $loop->iteration }}</td>
             <td>{{ $item->description }}@if($item->product_reference) <span class="muted">({{ $item->product_reference }})</span>@endif</td>
             <td class="center">{{ $item->quantity }}</td>
@@ -64,12 +65,18 @@
             <td class="right">{{ money($item->total, false) }}</td>
         </tr>
         @endforeach
+        @for($i = $document->items->count(); $i < $fixedRows; $i++)
+        <tr class="{{ ($i + 1) % 2 === 1 ? 'alt' : '' }}">
+            <td class="center muted">{{ $i + 1 }}</td>
+            <td>&nbsp;</td><td></td><td></td><td></td>
+        </tr>
+        @endfor
     </tbody>
 </table>
 
 <table class="mg-totals">
     <tr><td class="lbl">Sous-total</td><td class="val">{{ money($document->subtotal, false) }}</td></tr>
-    @if((float) $document->discount > 0)<tr><td class="lbl">Remise</td><td class="val">− {{ money($document->discount, false) }}</td></tr>@endif
+    <tr><td class="lbl">Remise</td><td class="val">@if((float) $document->discount > 0)− {{ money($document->discount, false) }}@else{{ ' ______' }}@endif</td></tr>
     @if((float) $document->delivery_fee > 0)<tr><td class="lbl">Livraison</td><td class="val">{{ money($document->delivery_fee, false) }}</td></tr>@endif
     @if($isQuote)
         <tr class="grand"><td>TOTAL DEVIS</td><td class="val">{{ money($document->total, false) }}</td></tr>

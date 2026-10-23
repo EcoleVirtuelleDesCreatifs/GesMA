@@ -40,6 +40,8 @@
     .mg-client { border: 0.8px solid #9FB2D8; border-radius: 4px; padding: 8px 10px; width: 52%; font-size: 9px; }
     .mg-client .t { font-size: 8.5px; font-weight: bold; color: #1F3864; margin-bottom: 4px; }
     .mg-client .line { border-bottom: 0.7px solid #9FB2D8; margin: 9px 0 2px; }
+    .mg-client .mg-f { margin: 5px 0; }
+    .mg-client .fl { display: inline-block; border-bottom: 0.7px solid #9FB2D8; min-width: 62%; }
     .mg-title { font-size: 30px; font-weight: bold; color: #1F3864; text-align: right; }
     .mg-meta { text-align: right; font-size: 9px; margin-top: 4px; }
     .mg-meta .num { font-weight: bold; color: #1F3864; font-size: 10px; }
@@ -47,7 +49,7 @@
     .mg-objet .line { display: inline-block; border-bottom: 0.7px solid #9FB2D8; width: 70%; }
     table.mg-items { width: 100%; border-collapse: collapse; table-layout: fixed; }
     table.mg-items th { background: #1F3864; color: #fff; font-size: 8.5px; padding: 6px 8px; text-align: left; border: 0.8px solid #1F3864; }
-    table.mg-items td { border: 0.6px solid #C7D2E8; padding: 6px 8px; font-size: 9px; }
+    table.mg-items td { border: 0.6px solid #C7D2E8; padding: 6px 8px; font-size: 9px; height: 20px; }
     table.mg-items tr.alt td { background: #EEF2FB; }
     table.mg-totals { width: 42%; margin-left: auto; margin-top: 0; border-collapse: collapse; }
     table.mg-totals td { border: 0.6px solid #C7D2E8; padding: 5px 8px; font-size: 9px; }
