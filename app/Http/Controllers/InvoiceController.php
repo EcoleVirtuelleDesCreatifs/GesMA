@@ -130,6 +130,7 @@ class InvoiceController extends Controller
     public function cancel(Request $request, Invoice $invoice)
     {
         $this->authorizeStore($invoice);
+        abort_if($invoice->status === InvoiceStatus::Cancelled, 422, 'Cette facture est déjà annulée.');
         $data = $request->validate(['reason' => ['required', 'string', 'max:255']]);
         $invoice->update(['status' => InvoiceStatus::Cancelled, 'notes' => trim($invoice->notes."\nAnnulée : ".$data['reason'])]);
         AuditLogger::log('invoice.cancelled', 'Facture '.$invoice->number.' annulée : '.$data['reason'], $invoice);

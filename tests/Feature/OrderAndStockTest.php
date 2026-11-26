@@ -151,4 +151,48 @@ class OrderAndStockTest extends GesmaTestCase
         $this->post("/commandes/{$order->number}/facture")->assertRedirect();
         $this->assertStringStartsWith('FAC-', Invoice::first()->number);
     }
+
+    public function test_quote_line_discounts_totals_and_single_invoice(): void
+    {
+        $this->actingAs($this->user(Role::Direction))->post('/devis', [
+            'customer_id' => $this->customer->id, 'store_id' => $this->yam->id, 'issued_at' => now()->toDateString(),
+            'discount' => 10000, 'delivery_fee' => 5000,
+            'lines' => [['product_id' => $this->sofa->id, 'quantity' => 2, 'discount_rate' => 10]],
+        ])->assertRedirect();
+        $quote = Quote::first();
+        // 2 × 300 000 = 600 000 brut − 10 % = 540 000 net − 10 000 de remise globale + 5 000 de livraison.
+        $this->assertSame(535000, $quote->total);
+        $this->assertSame(600000, $quote->grossTotal());
+        $this->assertSame(70000, $quote->totalDiscount());
+        $this->get("/devis/{$quote->number}/pdf")->assertOk()->assertHeader('content-type', 'application/pdf');
+
+        // Un devis ne génère qu'une seule facture active, avec les mêmes montants.
+        $this->post("/devis/{$quote->number}/facture")->assertRedirect();
+        $this->post("/devis/{$quote->number}/facture")->assertRedirect();
+        $this->assertSame(1, Invoice::count());
+        $invoice = Invoice::first();
+        $this->assertSame(535000, $invoice->total);
+        $this->get("/factures/{$invoice->number}/pdf")->assertOk()->assertHeader('content-type', 'application/pdf');
+
+        // Une facture annulée ne peut pas l'être une deuxième fois.
+        $this->post("/factures/{$invoice->number}/annuler", ['reason' => 'Erreur'])->assertRedirect();
+        $this->post("/factures/{$invoice->number}/annuler", ['reason' => 'Erreur'])->assertStatus(422);
+    }
+
+    public function test_sales_cannot_change_catalog_price_on_a_quote(): void
+    {
+        $this->actingAs($this->user(Role::Sales))->post('/devis', [
+            'customer_id' => $this->customer->id, 'issued_at' => now()->toDateString(),
+            'lines' => [['product_id' => $this->sofa->id, 'quantity' => 1, 'unit_price' => 1000]],
+        ])->assertRedirect();
+        $this->assertSame(300000, Quote::first()->total);
+    }
+
+    public function test_amount_in_words(): void
+    {
+        $this->assertSame('six millions quatre cent vingt mille six cent quarante et un', amount_in_words(6420641));
+        $this->assertSame('quatre-vingts', amount_in_words(80));
+        $this->assertSame('deux cent quatre-vingt mille', amount_in_words(280000));
+        $this->assertSame('soixante et onze', amount_in_words(71));
+    }
 }

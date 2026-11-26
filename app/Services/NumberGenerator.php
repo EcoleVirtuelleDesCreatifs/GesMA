@@ -23,10 +23,9 @@ class NumberGenerator
         $year ??= (int) now()->format('Y');
 
         return DB::transaction(function () use ($prefix, $year) {
-            $sequence = Sequence::where('key', $prefix)->where('year', $year)->lockForUpdate()->first();
-            if (! $sequence) {
-                $sequence = Sequence::create(['key' => $prefix, 'year' => $year, 'last_value' => 0]);
-            }
+            // insertOrIgnore évite l'erreur de doublon si deux documents sont créés au même instant.
+            Sequence::query()->insertOrIgnore(['key' => $prefix, 'year' => $year, 'last_value' => 0]);
+            $sequence = Sequence::where('key', $prefix)->where('year', $year)->lockForUpdate()->firstOrFail();
             $sequence->increment('last_value');
 
             return sprintf('%s-%d-%05d', $prefix, $year, $sequence->last_value);

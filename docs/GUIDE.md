@@ -56,6 +56,16 @@ Sur une livraison : modifier l'adresse, la date, le livreur et les frais ; puis 
   **Transformer en commande** ou **Générer la facture** quand le client accepte.
 - **Factures** : depuis une commande (bouton « Créer la facture »), un devis, ou directement. Enregistrez les
   paiements ; le PDF indique le reste à payer ou « Facture acquittée ».
+- **Remise par ligne** : chaque ligne accepte une remise en %. Le PDF affiche, comme un bon fournisseur,
+  Px unit. HT, Remise, Px unit. NET et Montant HT, puis Total HT brut, Total remise, Total HT net,
+  Livraison et TOTAL TTC, avec le montant TTC écrit en toutes lettres. Seuls la direction et les responsables
+  peuvent changer le prix catalogue d'un produit ; la remise reste ouverte à tous.
+- **Un devis = une facture** : tant qu'une facture non annulée existe pour un devis, le bouton renvoie vers
+  elle. Un devis refusé ou expiré ne peut plus être facturé ni transformé en commande.
+- **Personnaliser le PDF** (fichier `.env`) : `GESMA_COMPANY_ACTIVITY` (ligne sous le nom),
+  `GESMA_COMPANY_BANK` (comptes bancaires en pied de page), `GESMA_COMPANY_STAMP` (cachet/signature PNG
+  placé dans `public/`), `GESMA_QUOTE_TITLE` (ex. « FACTURE PRO FORMA ») et `GESMA_INVOICE_TITLE`. Les
+  conditions imprimées (délai de retour, acompte…) se modifient dans `config/gesma.php`.
 
 ## 6. Dépenses
 

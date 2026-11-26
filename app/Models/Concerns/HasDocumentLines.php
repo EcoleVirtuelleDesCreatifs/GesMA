@@ -39,13 +39,19 @@ trait HasDocumentLines
         return 'number';
     }
 
-    /** @param  array<int, array{product_id?:int|null, designation:string, reference?:string|null, unit_price:int, quantity:int}>  $lines */
+    /**
+     * Remplace les lignes et recalcule les totaux.
+     * subtotal = somme des lignes nettes (après remise de ligne) ; total = subtotal − remise globale + livraison.
+     *
+     * @param  array<int, array{product_id?:int|null, designation:string, reference?:string|null, unit_price:int, quantity:int, discount_rate?:float|int|string|null}>  $lines
+     */
     public function syncLines(array $lines): void
     {
         $this->lines()->delete();
         $subtotal = 0;
         foreach ($lines as $line) {
-            $lineTotal = (int) $line['unit_price'] * (int) $line['quantity'];
+            $rate = min(100, max(0, round((float) ($line['discount_rate'] ?? 0), 2)));
+            $lineTotal = DocumentLine::computeTotal((int) $line['unit_price'], (int) $line['quantity'], $rate);
             $subtotal += $lineTotal;
             $this->lines()->create([
                 'product_id' => $line['product_id'] ?? null,
@@ -53,11 +59,30 @@ trait HasDocumentLines
                 'reference' => $line['reference'] ?? null,
                 'unit_price' => (int) $line['unit_price'],
                 'quantity' => (int) $line['quantity'],
+                'discount_rate' => $rate,
                 'line_total' => $lineTotal,
             ]);
         }
         $this->subtotal = $subtotal;
         $this->total = max(0, $subtotal - (int) $this->discount + (int) $this->delivery_fee);
         $this->save();
+    }
+
+    /** Total hors remises (Σ quantité × prix unitaire). */
+    public function grossTotal(): int
+    {
+        return (int) $this->lines->sum(fn (DocumentLine $l) => $l->grossTotal());
+    }
+
+    /** Total des remises : remises de ligne + remise globale. */
+    public function totalDiscount(): int
+    {
+        return (int) $this->lines->sum(fn (DocumentLine $l) => $l->discountAmount()) + (int) $this->discount;
+    }
+
+    /** Total net hors frais de livraison. */
+    public function netTotal(): int
+    {
+        return max(0, (int) $this->subtotal - (int) $this->discount);
     }
 }

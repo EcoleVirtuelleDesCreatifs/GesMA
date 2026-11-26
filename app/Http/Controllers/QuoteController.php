@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderType;
 use App\Enums\QuoteStatus;
@@ -92,6 +93,7 @@ class QuoteController extends Controller
     public function updateStatus(Request $request, Quote $quote)
     {
         $this->authorizeStore($quote);
+        abort_if($quote->order_id, 422, 'Ce devis a été transformé en commande : son statut ne peut plus être modifié.');
         $data = $request->validate(['status' => ['required', Rule::enum(QuoteStatus::class)]]);
         $quote->update(['status' => $data['status']]);
 
@@ -112,30 +114,46 @@ class QuoteController extends Controller
         abort_if($quote->order_id, 422, 'Ce devis a déjà été transformé en commande.');
         $lines = $quote->lines->filter(fn ($l) => $l->product_id);
         abort_if($lines->isEmpty(), 422, 'Le devis ne contient aucun produit du catalogue.');
+        abort_if(in_array($quote->status, [QuoteStatus::Refused, QuoteStatus::Expired], true), 422, 'Un devis refusé ou expiré ne peut pas être transformé en commande.');
+        $freeLines = $quote->lines->reject(fn ($l) => $l->product_id);
+        // Les remises de ligne du devis sont reportées dans la remise de la commande pour conserver le même montant.
+        $lineDiscounts = (int) $lines->sum(fn ($l) => $l->discountAmount());
 
-        $order = DB::transaction(function () use ($quote, $lines, $orders, $request) {
+        $order = DB::transaction(function () use ($quote, $lines, $orders, $request, $lineDiscounts, $freeLines) {
             $order = $orders->create([
                 'type' => OrderType::Order->value,
                 'source' => OrderSource::Gesma->value,
                 'store_id' => $quote->store_id,
                 'customer_id' => $quote->customer_id,
                 'items' => $lines->map(fn ($l) => ['product_id' => $l->product_id, 'quantity' => $l->quantity, 'unit_price' => $l->unit_price])->values()->all(),
-                'discount' => $quote->discount,
+                'discount' => $quote->discount + $lineDiscounts,
                 'requires_delivery' => $quote->delivery_fee > 0 || $request->boolean('requires_delivery'),
                 'delivery' => ['fee' => $quote->delivery_fee, 'address' => $quote->customer->address, 'city' => $quote->customer->city],
-                'notes' => 'Issue du devis '.$quote->number,
+                'notes' => 'Issue du devis '.$quote->number.($freeLines->isNotEmpty()
+                    ? "\nLignes libres non reprises : ".$freeLines->map(fn ($l) => $l->designation.' ('.money($l->line_total).')')->implode(', ')
+                    : ''),
             ], $this->user());
             $quote->update(['order_id' => $order->id, 'status' => QuoteStatus::Accepted]);
 
             return $order;
         });
 
-        return redirect()->route('orders.show', $order)->with('success', 'Commande '.$order->number.' créée à partir du devis.');
+        $message = 'Commande '.$order->number.' créée à partir du devis.';
+        if ($freeLines->isNotEmpty()) {
+            $message .= ' Attention : '.$freeLines->count().' ligne(s) hors catalogue non reprise(s) dans la commande (voir les notes).';
+        }
+
+        return redirect()->route('orders.show', $order)->with('success', $message);
     }
 
     public function convertToInvoice(Quote $quote, NumberGenerator $numbers)
     {
         $this->authorizeStore($quote);
+        abort_if(in_array($quote->status, [QuoteStatus::Refused, QuoteStatus::Expired], true), 422, 'Un devis refusé ou expiré ne peut pas être facturé.');
+        if ($existing = $quote->invoices()->where('status', '!=', InvoiceStatus::Cancelled->value)->first()) {
+            return redirect()->route('invoices.show', $existing)->with('info', 'Ce devis est déjà facturé.');
+        }
+
         $invoice = DB::transaction(function () use ($quote, $numbers) {
             $invoice = Invoice::create([
                 'number' => $numbers->next(NumberGenerator::INVOICE),
@@ -150,7 +168,12 @@ class QuoteController extends Controller
                 'delivery_fee' => $quote->delivery_fee,
                 'notes' => $quote->notes,
             ]);
-            $invoice->syncLines($quote->lines->map(fn ($l) => $l->only(['product_id', 'designation', 'reference', 'unit_price', 'quantity']))->all());
+            $invoice->syncLines($quote->lines->map(fn ($l) => $l->only(['product_id', 'designation', 'reference', 'unit_price', 'quantity', 'discount_rate']))->all());
+            if ($quote->order) {
+                $invoice->amount_paid = min($invoice->total, $quote->order->amount_paid);
+                $invoice->refreshPaymentStatus();
+                $invoice->save();
+            }
             $quote->update(['status' => QuoteStatus::Accepted]);
 
             return $invoice;
