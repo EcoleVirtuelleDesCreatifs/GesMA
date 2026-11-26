@@ -215,6 +215,7 @@ legend { font-weight: 700; color: var(--ink); padding: 0 .35rem; }
 .lines-table input, .lines-table select { padding: .45rem .5rem; }
 .lines-table .col-qty { width: 90px; }
 .lines-table .col-price { width: 140px; }
+.lines-table .col-rate { width: 90px; }
 .lines-table .col-total { width: 140px; }
 .lines-table .col-del { width: 44px; }
 .totals { margin-left: auto; max-width: 360px; }
@@ -288,7 +289,7 @@ details.panel > div { padding: 0 1rem 1rem; }
     .lines-table tr { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; padding: .5rem 0; border-bottom: 1px solid var(--line); }
     .lines-table td { border: 0; padding: 0; }
     .lines-table td.col-product { grid-column: 1 / -1; }
-    .lines-table .col-qty, .lines-table .col-price, .lines-table .col-total, .lines-table .col-del { width: auto; }
+    .lines-table .col-qty, .lines-table .col-price, .lines-table .col-rate, .lines-table .col-total, .lines-table .col-del { width: auto; }
     .totals { max-width: none; }
     details.dropdown .dropdown-panel { position: fixed; left: 1rem; right: 1rem; width: auto; }
 }

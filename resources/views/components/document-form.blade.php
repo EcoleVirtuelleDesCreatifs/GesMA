@@ -8,7 +8,7 @@
         }
         return $html;
     };
-    $lines = old('lines', $document->exists ? $document->lines->map->only(['product_id', 'designation', 'quantity', 'unit_price'])->all() : [['product_id' => '', 'designation' => '', 'quantity' => 1, 'unit_price' => '']]);
+    $lines = old('lines', $document->exists ? $document->lines->map->only(['product_id', 'designation', 'quantity', 'unit_price', 'discount_rate'])->all() : [['product_id' => '', 'designation' => '', 'quantity' => 1, 'unit_price' => '', 'discount_rate' => 0]]);
     $customerId = old('customer_id', $document->customer_id ?? $customer?->id);
 @endphp
 <div class="grid grid-2-1">
@@ -34,7 +34,7 @@
             <div class="card-header"><h2>Lignes</h2><button class="btn btn-secondary btn-sm" type="button" data-add-line><x-icon name="plus" /> Ajouter</button></div>
             <div class="table-wrap" data-lines data-template="#doc-line">
                 <table class="table lines-table">
-                    <thead><tr><th>Produit / désignation</th><th class="col-qty">Qté</th><th class="col-price">Prix unitaire</th><th class="col-total num">Total</th><th class="col-del"></th></tr></thead>
+                    <thead><tr><th>Produit / désignation</th><th class="col-qty">Qté</th><th class="col-price">Prix unit. HT</th><th class="col-rate">Remise %</th><th class="col-total num">Montant HT</th><th class="col-del"></th></tr></thead>
                     <tbody>
                     @foreach ($lines as $i => $line)
                         <tr>
@@ -44,6 +44,7 @@
                             </td>
                             <td class="col-qty"><input type="number" min="1" name="lines[{{ $i }}][quantity]" value="{{ $line['quantity'] ?? 1 }}" data-qty required></td>
                             <td class="col-price"><input type="number" min="0" name="lines[{{ $i }}][unit_price]" value="{{ $line['unit_price'] ?? '' }}" data-price required></td>
+                            <td class="col-rate"><input type="number" min="0" max="100" step="0.01" name="lines[{{ $i }}][discount_rate]" value="{{ (float) ($line['discount_rate'] ?? 0) }}" data-rate title="Remise en %"></td>
                             <td class="col-total num" data-line-total>0 F CFA</td>
                             <td class="col-del"><button class="btn btn-ghost btn-sm" type="button" data-remove-line><x-icon name="x" /></button></td>
                         </tr>
@@ -51,7 +52,7 @@
                     </tbody>
                 </table>
             </div>
-            <template id="doc-line"><tr><td class="col-product"><select name="lines[__i__][product_id]" data-product>{!! $productOptions() !!}</select><input type="text" name="lines[__i__][designation]" placeholder="Désignation" data-designation style="margin-top:.3rem"></td><td class="col-qty"><input type="number" min="1" name="lines[__i__][quantity]" value="1" data-qty required></td><td class="col-price"><input type="number" min="0" name="lines[__i__][unit_price]" data-price required></td><td class="col-total num" data-line-total>0 F CFA</td><td class="col-del"><button class="btn btn-ghost btn-sm" type="button" data-remove-line><x-icon name="x" /></button></td></tr></template>
+            <template id="doc-line"><tr><td class="col-product"><select name="lines[__i__][product_id]" data-product>{!! $productOptions() !!}</select><input type="text" name="lines[__i__][designation]" placeholder="Désignation" data-designation style="margin-top:.3rem"></td><td class="col-qty"><input type="number" min="1" name="lines[__i__][quantity]" value="1" data-qty required></td><td class="col-price"><input type="number" min="0" name="lines[__i__][unit_price]" data-price required></td><td class="col-rate"><input type="number" min="0" max="100" step="0.01" name="lines[__i__][discount_rate]" value="0" data-rate title="Remise en %"></td><td class="col-total num" data-line-total>0 F CFA</td><td class="col-del"><button class="btn btn-ghost btn-sm" type="button" data-remove-line><x-icon name="x" /></button></td></tr></template>
         </div>
         <div class="card"><x-field name="notes" label="Notes / conditions particulières" type="textarea" :value="$document->notes" rows="3" /></div>
     </div>
@@ -59,14 +60,15 @@
         <div class="card">
             @include('partials.store-select', ['value' => $document->store_id, 'stores' => $stores])
             {{ $dates }}
-            <x-field name="discount" label="Remise (F CFA)" type="number" min="0" :value="$document->discount ?? 0" data-discount />
+            <x-field name="discount" label="Remise globale (F CFA)" type="number" min="0" :value="$document->discount ?? 0" data-discount />
             <x-field name="delivery_fee" label="Frais de livraison (F CFA)" type="number" min="0" :value="$document->delivery_fee ?? 0" data-fee />
             {{ $extra ?? '' }}
             <div class="totals">
-                <div class="row"><span>Sous-total</span><span data-total-subtotal>0 F CFA</span></div>
-                <div class="row"><span>Remise</span><span data-total-discount>0 F CFA</span></div>
+                <div class="row"><span>Total HT brut</span><span data-total-gross>0 F CFA</span></div>
+                <div class="row"><span>Total remise</span><span data-total-discount>0 F CFA</span></div>
+                <div class="row"><span>Total HT net</span><span data-total-net>0 F CFA</span></div>
                 <div class="row"><span>Livraison</span><span data-total-fee>0 F CFA</span></div>
-                <div class="row grand"><span>Total</span><span data-total-grand>0 F CFA</span></div>
+                <div class="row grand"><span>Total TTC</span><span data-total-grand>0 F CFA</span></div>
             </div>
             <div class="form-actions">{{ $actions }}</div>
         </div>

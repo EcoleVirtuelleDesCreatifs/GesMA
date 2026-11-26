@@ -155,11 +155,13 @@
         }
 
         function totals() {
-            var subtotal = 0;
+            var subtotal = 0, gross = 0;
             $$('tr', body).forEach(function (tr) {
                 var q = parseInt(($('[data-qty]', tr) || {}).value || '0', 10) || 0;
                 var p = parseInt(($('[data-price]', tr) || {}).value || '0', 10) || 0;
-                var line = q * p;
+                var r = Math.min(100, Math.max(0, parseFloat(($('[data-rate]', tr) || {}).value || '0') || 0));
+                var line = Math.round(q * p * (100 - r) / 100);
+                gross += q * p;
                 subtotal += line;
                 var cell = $('[data-line-total]', tr);
                 if (cell) cell.textContent = money(line);
@@ -171,7 +173,9 @@
             var fee = feeActive ? (parseInt(feeInput.value || '0', 10) || 0) : 0;
             var set = function (k, v) { var el = $('[data-total-' + k + ']', form); if (el) el.textContent = money(v); };
             set('subtotal', subtotal);
-            set('discount', discount);
+            set('gross', gross);
+            set('discount', (gross - subtotal) + discount);
+            set('net', Math.max(0, subtotal - discount));
             set('fee', fee);
             set('grand', Math.max(0, subtotal - discount + fee));
         }
@@ -198,7 +202,7 @@
             if (e.target.closest('[data-remove-line]')) {
                 e.preventDefault();
                 var rows = $$('tr', body);
-                if (rows.length > 1) e.target.closest('tr').remove(); else $$('input, select', rows[0]).forEach(function (i) { i.value = i.matches('[data-qty]') ? 1 : ''; });
+                if (rows.length > 1) e.target.closest('tr').remove(); else $$('input, select', rows[0]).forEach(function (i) { i.value = i.matches('[data-qty]') ? 1 : (i.matches('[data-rate]') ? 0 : ''); });
                 totals();
             }
         });

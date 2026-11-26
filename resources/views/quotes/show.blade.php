@@ -1,7 +1,11 @@
 @extends('layouts.app')
 @section('title', 'Devis '.$quote->number)
 @section('content')
-@php $locked = $quote->order_id || $quote->status === \App\Enums\QuoteStatus::Accepted; @endphp
+@php
+    $locked = $quote->order_id || $quote->status === \App\Enums\QuoteStatus::Accepted;
+    $closed = in_array($quote->status, [\App\Enums\QuoteStatus::Refused, \App\Enums\QuoteStatus::Expired], true);
+    $activeInvoices = $quote->invoices->where('status', '!=', \App\Enums\InvoiceStatus::Cancelled);
+@endphp
 <div class="page-header">
     <div>
         <h1>Devis <span class="mono">{{ $quote->number }}</span> {!! badge($quote->status) !!}</h1>
@@ -27,7 +31,7 @@
             <h2>Suite à donner</h2>
             @if ($quote->order)
                 <p>Commande créée : <a class="mono" href="{{ route('orders.show', $quote->order) }}">{{ $quote->order->number }}</a></p>
-            @else
+            @elseif (! $closed)
                 @can('orders.manage')
                     <form method="post" action="{{ route('quotes.order', $quote) }}" data-confirm="Créer la commande ? Le stock sera vérifié et réservé.">
                         @csrf
@@ -39,12 +43,13 @@
             @foreach ($quote->invoices as $inv)
                 <p style="margin:.6rem 0 0">Facture : <a class="mono" href="{{ route('invoices.show', $inv) }}">{{ $inv->number }}</a> {!! badge($inv->status) !!}</p>
             @endforeach
-            @if ($quote->invoices->isEmpty())
+            @if ($activeInvoices->isEmpty() && ! $closed)
                 @can('invoices.manage')
                     <form method="post" action="{{ route('quotes.invoice', $quote) }}" style="margin-top:.6rem">@csrf<button class="btn btn-secondary btn-block" type="submit"><x-icon name="receipt" /> Générer la facture</button></form>
                 @endcan
             @endif
         </div>
+        @unless ($quote->order_id)
         <div class="card">
             <h2>Statut</h2>
             <form method="post" action="{{ route('quotes.status', $quote) }}" style="display:flex;gap:.5rem">
@@ -53,6 +58,7 @@
                 <button class="btn btn-secondary" type="submit">OK</button>
             </form>
         </div>
+        @endunless
     </div>
 </div>
 @endsection
